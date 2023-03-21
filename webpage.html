@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<title>Roblox Beaming Link Checker</title>
+  <link href="style.css" rel="stylesheet" type="text/css">
+	<style>
+		#result {
+			font-weight: bold;
+			margin-top: 10px;
+		}
+		.beam {
+			color: red;
+		}
+		.safe {
+			color: green;
+		}
+		.referral {
+			color: blue;
+			font-size: 14px;
+			margin-left: 10px;
+		}
+	</style>
+</head>
+<body>
+  <center>
+	<h1>Roblox Beaming Link Checker</h1>
+	<p>Enter a link below to check if it's a beaming link:</p>
+	<form>
+		<input type="text" id="link" name="link">
+		<button type="button" onclick="checkLink()">Check Link</button>
+	</form>
+	<p id="result"></p>
+
+	<script>
+		function checkLink() {
+			var link = document.getElementById("link").value;
+			if (link.startsWith("https://www.roblox.com/") || link.startsWith("https://web.roblox.com/")) {
+				// The link is a valid Roblox link
+				document.getElementById("result").innerHTML = "This is a valid Roblox link.";
+				document.getElementById("result").className = "safe";
+			} else if (link.startsWith("https://") && !link.includes("roblox.com")) {
+				// Check if the link starts with https:// and does not include roblox.com
+				if (link.includes("?ref=") || link.includes("&ref=") || link.includes("ref=")) {
+					// Check if the link includes any referral query parameter
+					var referrals = extractReferrals(link);
+					document.getElementById("result").innerHTML = "This is a beaming link.";
+					document.getElementById("result").className = "beam";
+					for (var i = 0; i < referrals.length; i++) {
+						var referral = referrals[i];
+						var referralElem = document.createElement("span");
+						referralElem.innerHTML = referral;
+						referralElem.className = "referral";
+						document.getElementById("result").appendChild(referralElem);
+					}
+				} else {
+					// If the link does not include any referral query parameter, check if it's a tinyurl link
+					if (link.includes("tinyurl.com") || link.includes("grabify.link")) {
+						// Resolve the tinyurl/grabify.link to the actual URL and check if it's a Roblox link
+						resolveRedirects(link, function(result) {
+							if (result.startsWith("https://www.roblox.com/") || result.startsWith("https://web.roblox.com/")) {
+								document.getElementById("result").innerHTML = "This is a valid Roblox link.";
+								document.getElementById("result").className = "safe";
+							} else {
+								document.getElementById("result").innerHTML = "This is a beaming link.";
+								document.getElementById("result").className = "beam";
+								var referrals = extractReferrals(result);
+								for (var i = 0; i < referrals.length; i++) {
+									var referral = referrals[i];
+									var referralElem = document.createElement("span");
+									referralElem.innerHTML = referral;
+									referralElem.className = "referral";
+									document.getElementById("result").appendChild(referralElem);
+								}
+							}
+						});
+				
+				} else {
+					// The link is not a valid Roblox link or a known referral link
+					document.getElementById("result").innerHTML = "This is not a valid Roblox link, however it is likely to be a beaming link";
+					document.getElementById("result").className = "beam";
+				}
+			}
+		} else {
+			// The link is not a valid Roblox link or a known referral link
+			document.getElementById("result").innerHTML = "This is not a valid Roblox link, however it is likely to be a beaming link.";
+			document.getElementById("result").className = "beam";
+		}
+	}
+
+	function extractReferrals(link) {
+		// Extract all referral query parameters from the link
+		var referrals = [];
+		var queryString = link.split("?")[1];
+		if (queryString) {
+			var queryPairs = queryString.split("&");
+			for (var i = 0; i < queryPairs.length; i++) {
+				var queryPair = queryPairs[i];
+				if (queryPair.startsWith("ref=") || queryPair.startsWith("?ref=") || queryPair.startsWith("&ref=")) {
+					referrals.push(queryPair);
+				}
+			}
+		}
+		return referrals;
+	}
+
+	function resolveRedirects(url, callback) {
+		// Resolve all redirects for the given URL and return the final URL
+		var xhr = new XMLHttpRequest();
+		xhr.open("HEAD", url, true);
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				callback(xhr.responseURL);
+			}
+		};
+		xhr.send(null);
+	}
+</script>
+  </center>
+</body>
+</html>
